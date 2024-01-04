@@ -4,12 +4,15 @@ import {
   clipboardContentSchema,
   clipboardErrorSchema,
   clipboardTextContentSchema,
+  fileSchema,
 } from '../schemas/clipboardSchema';
 
-export type ClipboardTextContent = z.infer<typeof clipboardTextContentSchema>;
+export type IFile = z.infer<typeof fileSchema>;
 
-export type ClipboardFileContent = z.infer<typeof clipboardFileContentSchema>;
+export type IClipboardTextContent = z.infer<typeof clipboardTextContentSchema>;
 
-export type ClipboardError = z.infer<typeof clipboardErrorSchema>;
+export type IClipboardFileContent = z.infer<typeof clipboardFileContentSchema>;
 
-export type ClipboardContent = z.infer<typeof clipboardContentSchema>;
+export type IClipboardError = z.infer<typeof clipboardErrorSchema>;
+
+export type IClipboardContent = z.infer<typeof clipboardContentSchema>;

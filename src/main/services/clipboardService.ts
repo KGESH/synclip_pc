@@ -1,14 +1,15 @@
 import * as fs from 'fs';
 import * as ClipboardEx from 'electron-clipboard-ex';
 import { clipboard } from 'electron';
-import { ClipboardContent } from '../types/clipboardTypes';
+import { IClipboardContent, IFile } from '../types/clipboardTypes';
 import {
   clipboardFileContentSchema,
   clipboardErrorSchema,
   clipboardTextContentSchema,
+  fileSchema,
 } from '../schemas/clipboardSchema';
 
-export async function readClipboard(): Promise<ClipboardContent> {
+export async function readClipboard(): Promise<IClipboardContent> {
   const filePaths = ClipboardEx.readFilePaths();
 
   // Text content
@@ -23,21 +24,26 @@ export async function readClipboard(): Promise<ClipboardContent> {
 
   // Binary content
   if (filePaths.length >= 1) {
-    const buffersPromise = filePaths.map((filePath) => {
-      return new Promise<Buffer>((resolve, reject) => {
+    const filePromises = filePaths.map((filePath) => {
+      return new Promise<IFile>((resolve, reject) => {
         fs.readFile(filePath, (err, buffer) => {
           if (err) {
             reject(err);
           } else {
-            console.log(`File read: ${filePath}`);
-            resolve(buffer);
+            const file = fileSchema.parse({
+              name: filePath,
+              path: filePath,
+              buffer,
+            });
+            console.log(`File read: ${file}`);
+            resolve(file);
           }
         });
       });
     });
 
     try {
-      const buffers = await Promise.all(buffersPromise);
+      const files = await Promise.all(filePromises);
 
       // Todo: upload to google drive
       // Todo: notify to server
@@ -46,7 +52,7 @@ export async function readClipboard(): Promise<ClipboardContent> {
       // });
 
       console.log('All files read successfully.');
-      return clipboardFileContentSchema.parse({ type: 'file', buffers });
+      return clipboardFileContentSchema.parse({ type: 'file', files });
     } catch (error) {
       console.error('Error reading files:', error);
       return clipboardErrorSchema.parse({

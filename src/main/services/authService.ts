@@ -30,6 +30,30 @@ function loadCredentials() {
   }
 }
 
+export async function getGoogleAccessToken() {
+  const tokenExists = fs.existsSync(TOKEN_PATH);
+
+  // Send to renderer process.
+  if (!tokenExists) return null;
+
+  const token = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
+
+  const authClient = getGoogleAuthClient();
+  authClient.setCredentials(token);
+  authClient.on('tokens', (newToken) => {
+    if (newToken.refresh_token) {
+      token.refresh_token = newToken.refresh_token;
+      fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
+    }
+  });
+
+  const res = await authClient.getAccessToken();
+
+  if (!res.token) return null;
+
+  return res.token;
+}
+
 // type GoogleAuthClientFactoryOptions = {
 //   clientId: string;
 //   clientSecret: string;
@@ -64,7 +88,7 @@ export function getGoogleAuthClient() {
   return googleAuthClient;
 }
 
-export const getGoogleAccountInfo = async (accessToken?: string | null) => {
+export async function getGoogleAccountInfo(accessToken?: string | null) {
   if (!accessToken) throw new Error('No access token');
 
   const authClient = getGoogleAuthClient();
@@ -76,7 +100,7 @@ export const getGoogleAccountInfo = async (accessToken?: string | null) => {
   if (!email) throw new Error('No email in google account info');
 
   return { email };
-};
+}
 
 export const googleAuthorization = (mainWindow: BrowserWindow | null) => {
   const authClient = getGoogleAuthClient();

@@ -24,9 +24,15 @@ export const clipboardTextContentSchema = z.object({
   text: z.string(),
 });
 
+export const fileSchema = z.object({
+  name: z.string(),
+  path: z.string(),
+  buffer: z.instanceof(Buffer),
+});
+
 export const clipboardFileContentSchema = z.object({
   type: z.literal('file'),
-  buffers: z.instanceof(Buffer).array(),
+  files: fileSchema.array(),
 });
 
 export const clipboardErrorSchema = z.object({

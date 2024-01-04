@@ -8,7 +8,11 @@ export type Channels =
   | 'custom-auth'
   | 'is-authenticated'
   | 'read-clipboard'
-  | 'write-clipboard';
+  | 'write-clipboard'
+  | 'electron-store-get'
+  | 'electron-store-set'
+  | 'set::change-shortcut'
+  | 'done::change-shortcut';
 
 const electronHandler = {
   ipcRenderer: {
@@ -26,6 +30,15 @@ const electronHandler = {
     },
     once(channel: Channels, func: (...args: unknown[]) => void) {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
+    },
+  },
+  // Electron Store
+  store: {
+    get(key: string) {
+      return ipcRenderer.sendSync('electron-store-get', key);
+    },
+    set(property: string, val: any) {
+      ipcRenderer.send('electron-store-set', property, val);
     },
   },
 };

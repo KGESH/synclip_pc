@@ -23,14 +23,18 @@ import fs from 'fs';
 import MenuBuilder from './menu';
 import { getAssetPath, getRootPath, TOKEN_PATH } from './util';
 import {
+  getGoogleAccessToken,
   getGoogleAuthClient,
   googleAuthorization,
 } from './services/authService';
 import { readClipboard, writeClipboard } from './services/clipboardService';
 import {
+  changeShortcut,
   registerCustomShortcuts,
   unregisterShortcuts,
 } from './services/shortcutService';
+import { store } from './services/storeService';
+import { changeShortcutSchema } from './schemas/shortcutSchema';
 
 class AppUpdater {
   constructor() {
@@ -80,24 +84,10 @@ ipcMain.on('ipc-example', async (event, arg) => {
 });
 
 ipcMain.on('is-authenticated', async (event, args) => {
-  console.log(`==== IPC MAIN is-authenticated ====`);
+  const token = await getGoogleAccessToken();
 
-  const tokenExists = fs.existsSync(TOKEN_PATH);
+  if (!token) return event.reply('is-authenticated', false);
 
-  // Send to renderer process.
-  if (!tokenExists) return event.reply('is-authenticated', false);
-
-  const token = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
-  const authClient = getGoogleAuthClient();
-  authClient.setCredentials(token);
-  authClient.on('tokens', (newToken) => {
-    if (newToken.refresh_token) {
-      token.refresh_token = newToken.refresh_token;
-      fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
-    }
-  });
-
-  // Send to renderer process.
   return event.reply('is-authenticated', true);
 });
 
@@ -172,6 +162,21 @@ const createWindow = async (id: string, options: WindowOptions) => {
 /**
  * Add event listeners...
  */
+
+ipcMain.on('electron-store-get', async (event, val) => {
+  event.returnValue = store.get(val);
+});
+
+ipcMain.on('electron-store-set', async (event, key, val) => {
+  store.set(key, val);
+});
+
+ipcMain.on('set::change-shortcut', (event, args) => {
+  const params = changeShortcutSchema.parse(args);
+  const isChanged = changeShortcut(params);
+
+  event.reply('done::change-shortcut', isChanged);
+});
 
 app.on('window-all-closed', () => {
   unregisterShortcuts();
