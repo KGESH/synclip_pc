@@ -5,6 +5,8 @@ import { getUser, signUpUser } from './userService';
 import { GOOGLE_SCOPES } from '../constants/google';
 import { navigateTo } from './navigateService';
 import { getAssetPath, TOKEN_PATH } from '../util';
+import { registerDevice } from './deviceService';
+import { undefined } from 'zod';
 
 type Credentials = {
   client_id: string;
@@ -54,28 +56,14 @@ export async function getGoogleAccessToken() {
   return res.token;
 }
 
-// type GoogleAuthClientFactoryOptions = {
-//   clientId: string;
-//   clientSecret: string;
-//   redirectUri: string;
-// };
-//
-// function googleAuthClientFactory({
-//   clientId,
-//   clientSecret,
-//   redirectUri,
-// }: GoogleAuthClientFactoryOptions) {
-//   return new google.auth.OAuth2({ clientId, clientSecret, redirectUri });
-// }
-
 let googleAuthClient: Auth.OAuth2Client | null = null;
 
 export function getGoogleAuthClient() {
   if (!googleAuthClient) {
     const credentials = loadCredentials();
-    if (!credentials) {
+
+    if (!credentials)
       throw new Error('Failed to load Google OAuth credentials');
-    }
 
     const { client_secret, client_id, redirect_uris } = credentials;
     googleAuthClient = new google.auth.OAuth2({
@@ -156,6 +144,15 @@ export const googleAuthorization = (mainWindow: BrowserWindow | null) => {
       });
 
       console.log(`Created user: `, createdUser);
+
+      const newDevice = await registerDevice({
+        userId: createdUser.id,
+        deviceType: 'PC',
+        alias: 'My new desktop',
+        fcmToken: 'sample_TOKEN',
+      });
+
+      console.log(`Registered device: `, newDevice);
     }
 
     authWindow.close();
