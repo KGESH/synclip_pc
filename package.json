@@ -103,10 +103,13 @@
     "electron-router-dom": "^1.0.5",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.4",
+    "getmac": "^6.6.0",
     "googleapis": "^129.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.16.0",
+    "socket.io-client": "^4.7.3",
+    "ws": "^8.16.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
