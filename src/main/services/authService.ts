@@ -5,14 +5,16 @@ import { getUser, signUpUser } from './userService';
 import { GOOGLE_SCOPES } from '../constants/google';
 import { navigateTo } from './navigateService';
 import { getAssetPath, TOKEN_PATH } from '../util';
-import { registerDevice } from './deviceService';
-import { undefined } from 'zod';
+import { registerDevice, setCurrentDevice } from './deviceService';
+import { connectToDeviceSocketServer } from './socketService';
 
 type Credentials = {
   client_id: string;
   client_secret: string;
   redirect_uris: string[];
 };
+
+let googleAuthClient: Auth.OAuth2Client | null = null;
 
 function loadCredentials() {
   const CREDENTIALS_PATH = getAssetPath('credentials/credentials.json');
@@ -24,12 +26,28 @@ function loadCredentials() {
   try {
     const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf-8'));
     console.log('Credentials loaded successfully');
-    console.log(credentials);
     return credentials.web as Credentials; // Assuming the structure includes a 'web' key
   } catch (error) {
     console.error('Error reading credentials:', error);
     return null;
   }
+}
+
+export function getGoogleAuthClient() {
+  if (!googleAuthClient) {
+    const credentials = loadCredentials();
+
+    if (!credentials)
+      throw new Error('Failed to load Google OAuth credentials');
+
+    googleAuthClient = new google.auth.OAuth2({
+      clientId: credentials.client_id,
+      clientSecret: credentials.client_secret,
+      redirectUri: credentials.redirect_uris[0],
+    });
+  }
+
+  return googleAuthClient;
 }
 
 export async function getGoogleAccessToken() {
@@ -54,26 +72,6 @@ export async function getGoogleAccessToken() {
   if (!res.token) return null;
 
   return res.token;
-}
-
-let googleAuthClient: Auth.OAuth2Client | null = null;
-
-export function getGoogleAuthClient() {
-  if (!googleAuthClient) {
-    const credentials = loadCredentials();
-
-    if (!credentials)
-      throw new Error('Failed to load Google OAuth credentials');
-
-    const { client_secret, client_id, redirect_uris } = credentials;
-    googleAuthClient = new google.auth.OAuth2({
-      clientId: client_id,
-      clientSecret: client_secret,
-      redirectUri: redirect_uris[0],
-    });
-  }
-
-  return googleAuthClient;
 }
 
 export async function getGoogleAccountInfo(accessToken?: string | null) {
@@ -152,7 +150,10 @@ export const googleAuthorization = (mainWindow: BrowserWindow | null) => {
         fcmToken: 'sample_TOKEN',
       });
 
+      // Save device id to local storage
       console.log(`Registered device: `, newDevice);
+      setCurrentDevice(newDevice);
+      connectToDeviceSocketServer(newDevice);
     }
 
     authWindow.close();

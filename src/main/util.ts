@@ -2,6 +2,7 @@
 import { app } from 'electron';
 import { URL } from 'url';
 import path from 'path';
+import getMAC, { isMAC } from 'getmac';
 
 export function resolveHtmlPath(htmlFileName: string) {
   if (process.env.NODE_ENV === 'development') {
@@ -32,3 +33,11 @@ export function getAssetPath(...paths: string[]): string {
 /** Check token path after packaging */
 export const TOKEN_PATH = getAssetPath('credentials/token.json');
 // ? path.join(app.getPath('userData'), 'token.json')
+
+export function getMacAddress() {
+  const macAddress = getMAC();
+
+  if (!isMAC(macAddress)) throw new Error('Invalid MAC Address');
+
+  return macAddress;
+}

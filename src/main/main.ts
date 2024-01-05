@@ -8,7 +8,6 @@
  * When running `npm run build` or `npm run build:main`, this file is compiled to
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
-import * as path from 'path';
 import {
   app,
   BrowserWindow,
@@ -18,23 +17,27 @@ import {
 } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { createFileRoute, createURLRoute } from 'electron-router-dom';
+import * as path from 'path';
 import log from 'electron-log';
-import fs from 'fs';
 import MenuBuilder from './menu';
-import { getAssetPath, getRootPath, TOKEN_PATH } from './util';
+import { getAssetPath, getMacAddress, getRootPath } from './util';
 import {
   getGoogleAccessToken,
-  getGoogleAuthClient,
   googleAuthorization,
 } from './services/authService';
 import { readClipboard, writeClipboard } from './services/clipboardService';
+import { store } from './services/storeService';
+import { changeShortcutSchema } from './schemas/shortcutSchema';
+import {
+  connectToDeviceSocketServer,
+  removeSocketConnection,
+} from './services/socketService';
+import { getCurrentDevice } from './services/deviceService';
 import {
   changeShortcut,
   registerCustomShortcuts,
   unregisterShortcuts,
 } from './services/shortcutService';
-import { store } from './services/storeService';
-import { changeShortcutSchema } from './schemas/shortcutSchema';
 
 class AppUpdater {
   constructor() {
@@ -174,14 +177,14 @@ ipcMain.on('electron-store-set', async (event, key, val) => {
 ipcMain.on('set::change-shortcut', (event, args) => {
   const params = changeShortcutSchema.parse(args);
   const isChanged = changeShortcut(params);
-
   event.reply('done::change-shortcut', isChanged);
 });
 
 app.on('window-all-closed', () => {
-  unregisterShortcuts();
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
+  unregisterShortcuts();
+  // removeSocketConnection();
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -191,6 +194,12 @@ app
   .whenReady()
   .then(() => {
     registerCustomShortcuts();
+    getMacAddress();
+    const device = getCurrentDevice();
+    console.log(`==== Current device ====`);
+    console.log(device);
+    if (device?.id && device?.userId) connectToDeviceSocketServer(device);
+
     createWindow('main', {
       show: false,
       width: 1024,
@@ -206,7 +215,7 @@ app
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
-      if (mainWindow === null)
+      if (mainWindow === null) {
         createWindow('main', {
           show: false,
           width: 1024,
@@ -218,6 +227,7 @@ app
               : path.join(__dirname, '../../.erb/dll/preload.js'),
           },
         });
+      }
     });
   })
   .catch(console.log);

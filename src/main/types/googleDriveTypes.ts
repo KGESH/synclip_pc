@@ -1,9 +1,10 @@
-import {
-  uploadErrorSchema, uploadFileResponseSchema,
-  uploadResponseSchema,
-  uploadSuccessSchema
-} from "../schemas/googleDriveSchema";
 import { z } from 'zod';
+import {
+  uploadErrorSchema,
+  uploadFileResponseSchema,
+  uploadResponseSchema,
+  uploadSuccessSchema,
+} from '../schemas/googleDriveSchema';
 
 export type IUplaodFileResponse = z.infer<typeof uploadFileResponseSchema>;
 

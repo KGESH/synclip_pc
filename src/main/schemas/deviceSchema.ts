@@ -12,7 +12,7 @@ export const deviceSchema = z.object({
 
 export const deviceResponseSuccessSchema = z.object({
   status: z.literal('success'),
-  data: deviceSchema,
+  data: z.union([deviceSchema, deviceSchema.array()]),
 });
 
 export const deviceResponseFailSchema = z.object({

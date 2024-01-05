@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import * as ClipboardEx from 'electron-clipboard-ex';
 import { clipboard } from 'electron';
+import * as fileSystem from 'fs';
+import * as ClipboardEx from 'electron-clipboard-ex';
 import { IClipboardContent, IFile } from '../types/clipboardTypes';
 import {
   clipboardFileContentSchema,
@@ -11,6 +11,8 @@ import {
 
 export async function readClipboard(): Promise<IClipboardContent> {
   const filePaths = ClipboardEx.readFilePaths();
+  // ClipboardEx.hasImage();
+  // const filePaths: string[] = [];
 
   // Text content
   if (filePaths.length === 0) {
@@ -26,7 +28,7 @@ export async function readClipboard(): Promise<IClipboardContent> {
   if (filePaths.length >= 1) {
     const filePromises = filePaths.map((filePath) => {
       return new Promise<IFile>((resolve, reject) => {
-        fs.readFile(filePath, (err, buffer) => {
+        fileSystem.readFile(filePath, (err, buffer) => {
           if (err) {
             reject(err);
           } else {
@@ -73,9 +75,9 @@ export async function readClipboard(): Promise<IClipboardContent> {
 // 임시 로컬 디렉토리에 파일 저장.
 // 클립보드에 파일 경로 저장.
 // paste 이벤트 감지시 클립보드 파일 경로를 읽어서 파일 write.
-export function writeFilePaths(filePaths: string[]) {
-  ClipboardEx.writeFilePaths(filePaths);
-}
+// export function writeFilePaths(filePaths: string[]) {
+// ClipboardEx.writeFilePaths(filePaths);
+// }
 
 export function writeClipboard(content: string) {
   console.log(`write clipboard content: ${content}`);
