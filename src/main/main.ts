@@ -20,10 +20,13 @@ import { autoUpdater } from 'electron-updater';
 import { createFileRoute, createURLRoute } from 'electron-router-dom';
 import * as path from 'path';
 import log from 'electron-log';
+import { Socket } from 'socket.io-client';
+import TrayBuilder from './tray';
 import MenuBuilder from './menu';
 import { getAssetPath, getMacAddress, getRootPath } from './util';
 import {
   getGoogleAccessToken,
+  getGoogleAccountInfo,
   googleAuthorization,
 } from './services/authService';
 import { readClipboard, writeClipboard } from './services/clipboardService';
@@ -33,21 +36,15 @@ import {
   connectToDeviceSocketServer,
   registerCustomSocketEvent,
 } from './services/socketService';
-import { getCurrentDevice } from './services/deviceService';
 import {
   changeShortcut,
+  getShortcut,
   registerCustomShortcuts,
   unregisterShortcuts,
 } from './services/shortcutService';
-import { memoryStore } from './services/memoryStoreService';
-import { navigateTo } from './services/navigateService';
 import { textUploadSuccessSchema } from './schemas/googleDriveSchema';
 import { downloadFileFromGoogleDrive } from './services/googleDriveService';
-import { Socket } from 'socket.io-client';
-
-// Todo: extract to other file
-let isQuitApp = false;
-let tray: Tray;
+import { hideMainWindow, isAppQuit, quitApp } from './services/appService';
 
 class AppUpdater {
   constructor() {
@@ -97,11 +94,31 @@ ipcMain.on('ipc-example', async (event, arg) => {
 });
 
 ipcMain.on('is-authenticated', async (event, args) => {
-  const token = await getGoogleAccessToken();
+  try {
+    const token = await getGoogleAccessToken();
 
-  if (!token) return event.reply('is-authenticated', false);
+    if (!token) return event.reply('is-authenticated', false);
 
-  return event.reply('is-authenticated', true);
+    return event.reply('is-authenticated', true);
+  } catch (e) {
+    console.error(e);
+    return event.reply('is-authenticated', false);
+  }
+});
+
+ipcMain.on('google::account::get', async (event, args) => {
+  try {
+    const token = await getGoogleAccessToken();
+
+    if (!token) return event.reply('google::account::done', null);
+
+    const accountInfo = await getGoogleAccountInfo(token);
+
+    return event.reply('google::account::done', accountInfo);
+  } catch (e) {
+    console.error(e);
+    return event.reply('google::account::done', null);
+  }
 });
 
 function registerCustomSocketEvents(socket: Socket) {
@@ -175,19 +192,21 @@ const createWindow = async (id: string, options: WindowOptions) => {
     });
 
     mainWindow.on('close', (event) => {
-      console.log(`==== mainWindow close call ====`, memoryStore.app.isQuit);
-      if (memoryStore.app.isQuit) {
-        mainWindow = null;
-        return;
-      }
+      if (mainWindow) {
+        if (isAppQuit()) {
+          mainWindow = null;
+          return;
+        }
 
-      event.preventDefault();
-      mainWindow!.hide();
+        // Only close the window, not quit the app
+        event.preventDefault();
+        hideMainWindow(mainWindow);
+      }
     });
 
     mainWindow.on('closed', () => {
       console.log(`==== mainWindow closed ====`);
-      console.log(`==== isQuitApp: ${memoryStore.app.isQuit} ====`);
+      console.log(`==== isQuitApp: ${isAppQuit()} ====`);
 
       // Todo: remove
       if (mainWindow) {
@@ -198,6 +217,12 @@ const createWindow = async (id: string, options: WindowOptions) => {
 
     const menuBuilder = new MenuBuilder(mainWindow);
     menuBuilder.buildMenu();
+
+    const trayBuilder = new TrayBuilder(
+      mainWindow,
+      new Tray(getAssetPath('icons/16x16.png')),
+    );
+    trayBuilder.buildTray();
 
     // Open urls in the user's browser
     mainWindow.webContents.setWindowOpenHandler((edata) => {
@@ -217,18 +242,22 @@ const createWindow = async (id: string, options: WindowOptions) => {
  * Add event listeners...
  */
 
-ipcMain.on('electron-store-get', async (event, val) => {
+ipcMain.on('app::store::get', async (event, val) => {
   event.returnValue = store.get(val);
 });
 
-ipcMain.on('electron-store-set', async (event, key, val) => {
+ipcMain.on('app::store::set', async (event, key, val) => {
   store.set(key, val);
 });
 
-ipcMain.on('set::change-shortcut', (event, args) => {
+ipcMain.on('shortcut::store::get', (event, args) => {
+  event.returnValue = getShortcut(args);
+});
+
+ipcMain.on('shortcut::store::set', (event, args) => {
   const params = changeShortcutSchema.parse(args);
   const isChanged = changeShortcut(params);
-  event.reply('done::change-shortcut', isChanged);
+  event.reply('shortcut::store::set::done', isChanged);
 });
 
 app.on('window-all-closed', () => {
@@ -237,9 +266,7 @@ app.on('window-all-closed', () => {
   unregisterShortcuts();
   // removeSocketConnection();
   if (process.platform !== 'darwin') {
-    memoryStore.app.isQuit = true;
-    // Todo: quit app
-    app.quit();
+    quitApp();
   }
 });
 
@@ -249,8 +276,8 @@ app
     const socket = connectToDeviceSocketServer({ mac: getMacAddress() });
     registerCustomSocketEvents(socket);
 
-    registerCustomShortcuts();
     // Todo: fetch from server
+    registerCustomShortcuts();
 
     createWindow('main', {
       show: false,
@@ -267,7 +294,7 @@ app
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
-      if (!isQuitApp && !mainWindow?.isVisible()) {
+      if (!isAppQuit() && !mainWindow?.isVisible()) {
         mainWindow?.show();
         return;
       }

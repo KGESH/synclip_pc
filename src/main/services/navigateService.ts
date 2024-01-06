@@ -1,6 +1,6 @@
 import { BrowserWindow } from 'electron';
-import { getRootPath } from '../util';
 import { createFileRoute, createURLRoute } from 'electron-router-dom';
+import { getRootPath } from '../util';
 
 type NavigateOptions = {
   window: BrowserWindow;

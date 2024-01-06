@@ -18,11 +18,12 @@ export const store = new Store({
     // Shortcuts
     readClipboard: {
       type: 'string',
+      // default: 'Alt+C',
       default: 'Shift+C',
     },
   },
 });
 
 export function setDefaultCurrentDevice() {
-  store.set('currentDevice', defaultCurrentDevice);
+  // store.set('currentDevice', defaultCurrentDevice);
 }

@@ -1,35 +1,46 @@
-import { app, BrowserWindow, Menu, Tray } from 'electron';
-import { getAssetPath } from './util';
+import { BrowserWindow, Menu, Tray } from 'electron';
+import { quitApp } from './services/appService';
 
-export default class TrayBuilder {}
+export default class TrayBuilder {
+  private readonly mainWindow: BrowserWindow;
 
-//
-// try {
-//   tray = new Tray(getAssetPath('icon.png'));
-//   tray.setImage(getAssetPath('icon.png'));
-//   tray.setPressedImage(getAssetPath('icon.png'));
-//   const contextMenu = Menu.buildFromTemplate([
-//     {
-//       label: 'Show/Hide App',
-//       click: () => {
-//         if (mainWindow?.isVisible()) {
-//           mainWindow?.hide();
-//         } else {
-//           mainWindow?.show();
-//         }
-//       },
-//     },
-//     {
-//       label: 'Quit',
-//       click: () => {
-//         isQuitApp = true;
-//         app.quit();
-//       },
-//     },
-//   ]);
-//   tray.setToolTip('This is my application.');
-//   tray.setContextMenu(contextMenu);
-// } catch (e) {
-//   console.log(`Tray error`);
-//   console.error(e);
-// }
+  private readonly tray: Tray;
+
+  constructor(mainWindow: BrowserWindow, tray: Tray) {
+    this.mainWindow = mainWindow;
+    this.tray = tray;
+  }
+
+  buildTray(): Tray {
+    try {
+      if (!this.tray) throw new Error('Tray is not defined');
+
+      this.tray.setToolTip('Synclip');
+      this.setContextMenu();
+      // this.handleTrayClick(); // Todo: handle tray click event
+    } catch (e) {
+      console.error('Tray setup failed:', e);
+    }
+
+    return this.tray;
+  }
+
+  private setContextMenu(): void {
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'Quit',
+        click: () => {
+          quitApp();
+        },
+      },
+    ]);
+
+    this.tray.setContextMenu(contextMenu);
+  }
+
+  // private handleTrayClick(): void {
+  //   this.tray.on('click', () => {
+  //     // Tray click event
+  //   });
+  // }
+}

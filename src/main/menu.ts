@@ -1,11 +1,10 @@
 import {
-  app,
   Menu,
   shell,
   BrowserWindow,
   MenuItemConstructorOptions,
 } from 'electron';
-import { memoryStore } from './services/memoryStoreService';
+import { quitApp } from './services/appService';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
@@ -80,8 +79,7 @@ export default class MenuBuilder {
           label: 'Quit',
           accelerator: 'Command+Q',
           click: () => {
-            memoryStore.app.setIsQuit(true);
-            app.quit();
+            quitApp();
           },
         },
       ],

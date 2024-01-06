@@ -1,9 +1,27 @@
 import { globalShortcut } from 'electron';
+import Store from 'electron-store';
 import { readClipboard } from './clipboardService';
-import { store } from './storeService';
 import { IChangeShortcut } from '../types/shortcutTypes';
 import { uploadFile } from './googleDriveService';
 import { notifyToServer } from './socketService';
+
+const shortcutStore = new Store({
+  schema: {
+    // Shortcuts
+    readClipboard: {
+      type: 'string',
+      default: 'CmdOrCtrl+Shift+C',
+    },
+  },
+});
+
+export function getShortcut(key: string) {
+  return shortcutStore.get(key) as string;
+}
+
+export function setShortcut(key: string, value: string) {
+  shortcutStore.set(key, value);
+}
 
 async function handleReadClipboard() {
   const clipboard = await readClipboard();
@@ -32,16 +50,16 @@ const shortcutMapper = {
 export type Shortcuts = keyof typeof shortcutMapper;
 
 export function listenToReadClipboardShortcut() {
-  const shortcut = store.get('readClipboard') as string;
+  const shortcut = getShortcut('readClipboard');
   globalShortcut.register(shortcut, handleReadClipboard);
 }
 
 export function changeShortcut({ event, newShortcut }: IChangeShortcut) {
   try {
-    const prevShortcut = store.get(event) as string;
+    const prevShortcut = getShortcut(event);
     globalShortcut.unregister(prevShortcut);
 
-    store.set(event, newShortcut);
+    setShortcut(event, newShortcut);
     globalShortcut.register(newShortcut, shortcutMapper[event as Shortcuts]);
     return true;
   } catch (e) {
@@ -50,6 +68,7 @@ export function changeShortcut({ event, newShortcut }: IChangeShortcut) {
 }
 
 export function registerCustomShortcuts() {
+  shortcutStore.clear();
   listenToReadClipboardShortcut();
 }
 

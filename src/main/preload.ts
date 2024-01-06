@@ -9,10 +9,13 @@ export type Channels =
   | 'is-authenticated'
   | 'read-clipboard'
   | 'write-clipboard'
-  | 'electron-store-get'
-  | 'electron-store-set'
-  | 'set::change-shortcut'
-  | 'done::change-shortcut';
+  | 'app::store::get'
+  | 'app::store::set'
+  | 'shortcut::store::get'
+  | 'shortcut::store::set'
+  | 'shortcut::store::set::done'
+  | 'google::account::get'
+  | 'google::account::done';
 
 const electronHandler = {
   ipcRenderer: {
@@ -32,13 +35,13 @@ const electronHandler = {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
   },
-  // Electron Store
+  // Electron App Store
   store: {
     get(key: string) {
-      return ipcRenderer.sendSync('electron-store-get', key);
+      return ipcRenderer.sendSync('app::store::get', key);
     },
     set(property: string, val: any) {
-      ipcRenderer.send('electron-store-set', property, val);
+      ipcRenderer.send('app::store::set', property, val);
     },
   },
 };

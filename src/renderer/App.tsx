@@ -5,6 +5,7 @@ import AuthButton from './components/auth/google/authButton';
 import { useCheckAuth } from './components/hooks/useCheckAuth';
 import './App.css';
 import { useClipboard } from './components/hooks/useClipboard';
+import { useFetchUser } from './components/hooks/useFetchUser';
 
 type AuthWrapperProps = {
   children: React.ReactNode;
@@ -31,25 +32,38 @@ function AuthWrapper({ children }: AuthWrapperProps) {
   return <>{children}</>;
 }
 
+function RegisterDevicePage() {
+  return (
+    <div>
+      <h1>Register Device Page</h1>
+    </div>
+  );
+}
+
 function Home() {
   const navigate = useNavigate();
   const { clipboardContent, readClipboard, writeClipboard } = useClipboard();
-  const currentPath = window.location.href;
-  // const { isAuthenticated } = useCheckAuth();
+  const { isLoading, user, devices } = useFetchUser();
 
-  console.log('Home');
-  console.log(currentPath);
+  if (isLoading) return <LoadingPage />;
 
-  // console.log(isAuthenticated);
-
-  // navigate('/#login', {
-  //   replace: true,
-  // });
-  // if (!isAuthenticated) navigate('/#login');
+  if (devices.length === 0) return <Navigate to="/device/register" />;
 
   return (
     <div>
-      <h1>Hello World!</h1>
+      <h1>
+        Hello {user?.email} {user?.name}!!
+      </h1>
+      <h2>
+        Your devices:{' '}
+        {devices.map((device) => {
+          return (
+            <div>
+              {device.mac} - {device.deviceType}
+            </div>
+          );
+        })}
+      </h2>
       <p>Clipboard: {clipboardContent}</p>
       <button type="button" onClick={readClipboard}>
         Read clipboard
@@ -122,6 +136,14 @@ export default function App() {
             element={
               <AuthWrapper>
                 <Home />
+              </AuthWrapper>
+            }
+          />
+          <Route
+            path="/device/register"
+            element={
+              <AuthWrapper>
+                <RegisterDevicePage />
               </AuthWrapper>
             }
           />

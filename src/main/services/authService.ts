@@ -5,8 +5,7 @@ import { getUser, signUpUser } from './userService';
 import { GOOGLE_SCOPES } from '../constants/google';
 import { navigateTo } from './navigateService';
 import { getAssetPath, getMacAddress, TOKEN_PATH } from '../util';
-import { registerDevice, setCurrentDevice } from './deviceService';
-import { IDevice } from '../types/deviceTypes';
+import { registerDevice } from './deviceService';
 
 type Credentials = {
   client_id: string;

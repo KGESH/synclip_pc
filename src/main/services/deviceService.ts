@@ -1,15 +1,16 @@
 import { BACKEND_BASE_URL } from '../constants/url';
 import { IDevice } from '../types/deviceTypes';
-import { deviceResponseSchema, deviceSchema } from '../schemas/deviceSchema';
+import { deviceResponseSchema } from '../schemas/deviceSchema';
 import { IUser } from '../types/userTypes';
-import { setDefaultCurrentDevice, store } from './storeService';
-import { getMacAddress } from '../util';
 
-export async function getDevices({ id, email }: Pick<IUser, 'id' | 'email'>) {
-  if (!id && !email) throw new Error('id or userId or email is required');
+export async function getDevices({
+  userId,
+  email,
+}: Partial<Pick<IUser, 'email'> & Pick<IDevice, 'userId'>>) {
+  if (!userId && !email) throw new Error('userId or email is required');
 
   const endpoint = new URL('/devices', BACKEND_BASE_URL);
-  if (id) endpoint.searchParams.append('id', id);
+  if (userId) endpoint.searchParams.append('userId', userId);
   if (email) endpoint.searchParams.append('email', email);
 
   const response = await fetch(endpoint, {
@@ -22,6 +23,9 @@ export async function getDevices({ id, email }: Pick<IUser, 'id' | 'email'>) {
   switch (res.status) {
     case 'success':
       return res.data as IDevice[];
+
+    case 'not_found':
+      return [] as IDevice[];
 
     case 'error':
     default:
@@ -56,33 +60,23 @@ export async function getDevice({ id, mac }: { id?: string; mac?: string }) {
   }
 }
 
-export function getCurrentDeviceId() {
-  const device = store.get('currentDevice');
-
-  const { id } = deviceSchema.parse(device);
-
-  if (!id) return null;
-
-  return id as string;
-}
+// export function getCurrentDeviceId() {
+//   const device = store.get('currentDevice');
+//
+//   const { id } = deviceSchema.parse(device);
+//
+//   if (!id) return null;
+//
+//   return id as string;
+// }
 
 export function resetCurrentDevice() {
-  setDefaultCurrentDevice();
+  // setDefaultCurrentDevice();
 }
 
-export function setCurrentDevice(device: IDevice) {
-  resetCurrentDevice();
-  store.set('currentDevice', device);
-}
-
-export async function getCurrentDevice() {
-  const mac = getMacAddress();
-  const device = await getDevice({ mac });
-
-  return device;
-  // const device = store.get('currentDevice');
-  // return deviceSchema.parse(device);
-}
+// export function setCurrentDevice(device: IDevice) {
+//   resetCurrentDevice();
+// }
 
 export async function registerDevice(device: Omit<IDevice, 'id'>) {
   const endpoint = new URL('/devices', BACKEND_BASE_URL);
