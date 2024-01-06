@@ -3,6 +3,7 @@ import { IDevice } from '../types/deviceTypes';
 import { deviceResponseSchema, deviceSchema } from '../schemas/deviceSchema';
 import { IUser } from '../types/userTypes';
 import { setDefaultCurrentDevice, store } from './storeService';
+import { getMacAddress } from '../util';
 
 export async function getDevices({ id, email }: Pick<IUser, 'id' | 'email'>) {
   if (!id && !email) throw new Error('id or userId or email is required');
@@ -28,9 +29,12 @@ export async function getDevices({ id, email }: Pick<IUser, 'id' | 'email'>) {
   }
 }
 
-export async function getDevice(id: string) {
+export async function getDevice({ id, mac }: { id?: string; mac?: string }) {
+  if (!id && !mac) throw new Error('id or mac is required');
+
   const endpoint = new URL('/devices', BACKEND_BASE_URL);
-  endpoint.searchParams.append('id', id);
+  if (id) endpoint.searchParams.append('id', id);
+  else if (mac) endpoint.searchParams.append('mac', mac);
 
   const response = await fetch(endpoint, {
     method: 'GET',
@@ -42,6 +46,9 @@ export async function getDevice(id: string) {
   switch (res.status) {
     case 'success':
       return res.data as IDevice;
+
+    case 'not_found':
+      return null;
 
     case 'error':
     default:
@@ -68,9 +75,13 @@ export function setCurrentDevice(device: IDevice) {
   store.set('currentDevice', device);
 }
 
-export function getCurrentDevice() {
-  const device = store.get('currentDevice');
-  return deviceSchema.parse(device);
+export async function getCurrentDevice() {
+  const mac = getMacAddress();
+  const device = await getDevice({ mac });
+
+  return device;
+  // const device = store.get('currentDevice');
+  // return deviceSchema.parse(device);
 }
 
 export async function registerDevice(device: Omit<IDevice, 'id'>) {
@@ -83,6 +94,8 @@ export async function registerDevice(device: Omit<IDevice, 'id'>) {
   });
 
   const res = deviceResponseSchema.parse(await response.json());
+
+  console.log(`Register Device Response: ${JSON.stringify(res)}`);
 
   switch (res.status) {
     case 'success':

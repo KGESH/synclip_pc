@@ -5,6 +5,7 @@ export const deviceTypeSchema = z.union([z.literal('PC'), z.literal('MOBILE')]);
 export const deviceSchema = z.object({
   id: z.string(),
   userId: z.string(),
+  mac: z.string(),
   alias: z.string().optional(),
   deviceType: deviceTypeSchema,
   fcmToken: z.string(),

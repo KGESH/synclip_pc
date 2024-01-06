@@ -2,23 +2,42 @@ import { Manager, Socket } from 'socket.io-client';
 import { IDevice } from '../types/deviceTypes';
 import { INotifyEvent } from '../types/notifyTypes';
 import { BACKEND_SOCKET_URL } from '../constants/url';
-import { textUploadSuccessSchema } from '../schemas/googleDriveSchema';
-import { downloadFileFromGoogleDrive } from './googleDriveService';
+// import { textUploadSuccessSchema } from '../schemas/googleDriveSchema';
+// import { downloadFileFromGoogleDrive } from './googleDriveService';
 
 let manager: Manager | null = null;
 let socket: Socket | null = null;
 
-function initializeManager(
-  device: Pick<IDevice, 'id' | 'userId' | 'deviceType'>,
-): Manager {
+function initializeManager(args: Pick<IDevice, 'mac'>): Manager {
   if (!manager) {
     manager = new Manager(BACKEND_SOCKET_URL, {
       reconnectionDelayMax: 10000,
       transports: ['websocket'],
-      query: device,
+      query: args,
     });
   }
   return manager;
+}
+
+type IRegisterCustomSocketEvent = {
+  socket: Socket | null;
+  event: string;
+  callback: (...args: any[]) => void;
+};
+
+export function registerCustomSocketEvent({
+  socket,
+  event,
+  callback,
+}: IRegisterCustomSocketEvent): void {
+  if (!socket) {
+    throw new Error('Socket is not connected');
+  }
+
+  if (!socket.hasListeners(event)) {
+    socket.on(event, callback);
+    console.log(`[Socket] Register custom event: ${event}`);
+  }
 }
 
 function setupSocketEventListeners(io: Socket): void {
@@ -34,45 +53,42 @@ function setupSocketEventListeners(io: Socket): void {
       console.error('[Socket Connected Error]', err);
     });
   }
-
-  if (!io.hasListeners('pong')) {
-    io.on('pong', (...args) => {
-      console.log(`[Socket pong]`, args);
-    });
-  }
-
-  if (!io.hasListeners('paste')) {
-    io.on('paste', (...args) => {
-      console.log(`[Socket paste]`, args);
-      const message = textUploadSuccessSchema.parse(args[0]);
-
-      const { content } = message;
-      downloadFileFromGoogleDrive(content.id);
-
-      // Todo: download from googleDrive
-    });
-  }
+  //
+  // if (!io.hasListeners('pong')) {
+  //   io.on('pong', (...args) => {
+  //     console.log(`[Socket pong]`, args);
+  //   });
+  // }
+  //
+  // if (!io.hasListeners('paste')) {
+  //   io.on('paste', (...args) => {
+  //     console.log(`[Socket paste]`, args);
+  //     const message = textUploadSuccessSchema.parse(args[0]);
+  //
+  //     const { content } = message;
+  //     downloadFileFromGoogleDrive(content.id);
+  //
+  //     // Todo: download from googleDrive
+  //   });
 }
 
 // Modify getSocket to use setupSocketEventListeners
-function getSocket(
-  device: Pick<IDevice, 'id' | 'userId' | 'deviceType'>,
-): Socket {
+function getSocket(args: Pick<IDevice, 'mac'>): Socket {
   if (!socket) {
     console.log(`Creating new socket connection`);
-    const currentManager = initializeManager(device);
+    const currentManager = initializeManager(args);
     socket = currentManager.socket('/');
     setupSocketEventListeners(socket);
   }
+
   return socket;
 }
 
 export function connectToDeviceSocketServer(
-  device: Pick<IDevice, 'id' | 'userId' | 'deviceType'>,
+  args: Pick<IDevice, 'mac'>,
 ): Socket {
-  if (!socket?.connected) {
-    socket = getSocket(device);
-  }
+  if (!socket?.connected) socket = getSocket(args);
+
   return socket;
 }
 

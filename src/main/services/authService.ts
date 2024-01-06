@@ -4,9 +4,9 @@ import * as fs from 'fs';
 import { getUser, signUpUser } from './userService';
 import { GOOGLE_SCOPES } from '../constants/google';
 import { navigateTo } from './navigateService';
-import { getAssetPath, TOKEN_PATH } from '../util';
+import { getAssetPath, getMacAddress, TOKEN_PATH } from '../util';
 import { registerDevice, setCurrentDevice } from './deviceService';
-import { connectToDeviceSocketServer } from './socketService';
+import { IDevice } from '../types/deviceTypes';
 
 type Credentials = {
   client_id: string;
@@ -146,19 +146,19 @@ export const googleAuthorization = (mainWindow: BrowserWindow | null) => {
       const newDevice = await registerDevice({
         userId: createdUser.id,
         deviceType: 'PC',
+        mac: getMacAddress(),
         alias: 'My new desktop',
         fcmToken: 'sample_TOKEN',
       });
 
       // Save device id to local storage
       console.log(`Registered device: `, newDevice);
-      setCurrentDevice(newDevice);
-      connectToDeviceSocketServer(newDevice);
+      // Todo: remove
+      // setCurrentDevice(newDevice);
     }
 
     authWindow.close();
 
-    // Todo: redirect to home page
     if (mainWindow) {
       navigateTo({
         window: mainWindow,

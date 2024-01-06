@@ -1,4 +1,3 @@
-import { getGoogleAccessToken } from './authService';
 import {
   IClipboardFileContent,
   IClipboardTextContent,
@@ -9,9 +8,8 @@ import {
   uploadFileResponseSchema,
 } from '../schemas/googleDriveSchema';
 import { IUplaodFileResponse } from '../types/googleDriveTypes';
-import { getCurrentDevice } from './deviceService';
-import { notifyToServer } from './socketService';
 import { writeClipboard } from './clipboardService';
+import { getGoogleAccessToken } from './authService';
 
 async function _uploadTextContent(
   args: IClipboardTextContent,
@@ -117,13 +115,11 @@ export async function uploadFile(
 
   if (!accessToken) throw new Error('[UploadFile] No access token');
 
-  const { userId } = getCurrentDevice();
+  // const { userId } = getCurrentDevice();
 
   if (args.type === 'text') {
     const response = await _uploadTextContent(args, accessToken);
     // Todo: notify to server
-
-    notifyToServer('copy', response);
 
     return response;
   }

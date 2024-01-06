@@ -3,6 +3,7 @@ import { readClipboard } from './clipboardService';
 import { store } from './storeService';
 import { IChangeShortcut } from '../types/shortcutTypes';
 import { uploadFile } from './googleDriveService';
+import { notifyToServer } from './socketService';
 
 async function handleReadClipboard() {
   const clipboard = await readClipboard();
@@ -10,6 +11,7 @@ async function handleReadClipboard() {
     const uploadResult = await uploadFile(clipboard);
     console.log(`==== upload result ====`);
     console.log(uploadResult);
+    notifyToServer('copy', uploadResult);
   }
 
   if (clipboard.type === 'file') {

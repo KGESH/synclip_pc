@@ -14,6 +14,7 @@ import {
   shell,
   ipcMain,
   BrowserWindowConstructorOptions as WindowOptions,
+  Tray,
 } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { createFileRoute, createURLRoute } from 'electron-router-dom';
@@ -30,7 +31,7 @@ import { store } from './services/storeService';
 import { changeShortcutSchema } from './schemas/shortcutSchema';
 import {
   connectToDeviceSocketServer,
-  removeSocketConnection,
+  registerCustomSocketEvent,
 } from './services/socketService';
 import { getCurrentDevice } from './services/deviceService';
 import {
@@ -38,6 +39,15 @@ import {
   registerCustomShortcuts,
   unregisterShortcuts,
 } from './services/shortcutService';
+import { memoryStore } from './services/memoryStoreService';
+import { navigateTo } from './services/navigateService';
+import { textUploadSuccessSchema } from './schemas/googleDriveSchema';
+import { downloadFileFromGoogleDrive } from './services/googleDriveService';
+import { Socket } from 'socket.io-client';
+
+// Todo: extract to other file
+let isQuitApp = false;
+let tray: Tray;
 
 class AppUpdater {
   constructor() {
@@ -94,7 +104,31 @@ ipcMain.on('is-authenticated', async (event, args) => {
   return event.reply('is-authenticated', true);
 });
 
-ipcMain.on('authorize', () => googleAuthorization(mainWindow));
+function registerCustomSocketEvents(socket: Socket) {
+  registerCustomSocketEvent({
+    socket,
+    event: 'pong',
+    callback: (...args) => {
+      console.log(`[Socket pong]`, args);
+    },
+  });
+
+  registerCustomSocketEvent({
+    socket,
+    event: 'paste',
+    callback: (...args) => {
+      console.log(`[Socket paste]`, args);
+      const message = textUploadSuccessSchema.parse(args[0]);
+
+      const { content } = message;
+      downloadFileFromGoogleDrive(content.id);
+    },
+  });
+}
+
+ipcMain.on('authorize', () => {
+  googleAuthorization(mainWindow);
+});
 
 ipcMain.on('read-clipboard', async (event, args) => {
   const res = await readClipboard();
@@ -140,9 +174,26 @@ const createWindow = async (id: string, options: WindowOptions) => {
       }
     });
 
+    mainWindow.on('close', (event) => {
+      console.log(`==== mainWindow close call ====`, memoryStore.app.isQuit);
+      if (memoryStore.app.isQuit) {
+        mainWindow = null;
+        return;
+      }
+
+      event.preventDefault();
+      mainWindow!.hide();
+    });
+
     mainWindow.on('closed', () => {
       console.log(`==== mainWindow closed ====`);
-      mainWindow = null;
+      console.log(`==== isQuitApp: ${memoryStore.app.isQuit} ====`);
+
+      // Todo: remove
+      if (mainWindow) {
+        console.log(`==== mainWindow is not null ====`);
+        mainWindow = null;
+      }
     });
 
     const menuBuilder = new MenuBuilder(mainWindow);
@@ -186,6 +237,8 @@ app.on('window-all-closed', () => {
   unregisterShortcuts();
   // removeSocketConnection();
   if (process.platform !== 'darwin') {
+    memoryStore.app.isQuit = true;
+    // Todo: quit app
     app.quit();
   }
 });
@@ -193,12 +246,11 @@ app.on('window-all-closed', () => {
 app
   .whenReady()
   .then(() => {
+    const socket = connectToDeviceSocketServer({ mac: getMacAddress() });
+    registerCustomSocketEvents(socket);
+
     registerCustomShortcuts();
-    getMacAddress();
-    const device = getCurrentDevice();
-    console.log(`==== Current device ====`);
-    console.log(device);
-    if (device?.id && device?.userId) connectToDeviceSocketServer(device);
+    // Todo: fetch from server
 
     createWindow('main', {
       show: false,
@@ -215,6 +267,11 @@ app
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
+      if (!isQuitApp && !mainWindow?.isVisible()) {
+        mainWindow?.show();
+        return;
+      }
+
       if (mainWindow === null) {
         createWindow('main', {
           show: false,

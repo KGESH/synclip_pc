@@ -3,6 +3,7 @@ import Store from 'electron-store';
 export const defaultCurrentDevice = {
   id: '',
   userId: '',
+  mac: '',
   alias: '',
   deviceType: 'PC',
   fcmToken: '',
