@@ -8,7 +8,6 @@ export const useCheckAuth = () => {
 
   useEffect(() => {
     const handleAuthentication = (isLogin: unknown) => {
-      console.log('[useCheckAuth] is-authenticated:', isLogin);
       setIsAuthenticated(isLogin as boolean);
       setIsLoading(false);
     };
