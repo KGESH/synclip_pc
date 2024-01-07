@@ -33,7 +33,10 @@ export async function getDevices({
   }
 }
 
-export async function getDevice({ id, mac }: { id?: string; mac?: string }) {
+export async function getDevice({
+  id,
+  mac,
+}: Partial<Pick<IDevice, 'id' | 'mac'>>) {
   if (!id && !mac) throw new Error('id or mac is required');
 
   const endpoint = new URL('/devices', BACKEND_BASE_URL);
