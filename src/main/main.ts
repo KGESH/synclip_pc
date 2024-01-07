@@ -30,7 +30,7 @@ import {
   googleAuthorization,
 } from './services/authService';
 import { readClipboard, writeClipboard } from './services/clipboardService';
-import { store } from './services/storeService';
+import { appStore } from './services/storeService';
 import { changeShortcutSchema } from './schemas/shortcutSchema';
 import {
   connectToDeviceSocketServer,
@@ -243,11 +243,11 @@ const createWindow = async (id: string, options: WindowOptions) => {
  */
 
 ipcMain.on('app::store::get', async (event, val) => {
-  event.returnValue = store.get(val);
+  event.returnValue = appStore.get(val);
 });
 
 ipcMain.on('app::store::set', async (event, key, val) => {
-  store.set(key, val);
+  appStore.set(key, val);
 });
 
 ipcMain.on('shortcut::store::get', (event, args) => {

@@ -36,7 +36,7 @@ const electronHandler = {
     },
   },
   // Electron App Store
-  store: {
+  appStore: {
     get(key: string) {
       return ipcRenderer.sendSync('app::store::get', key);
     },

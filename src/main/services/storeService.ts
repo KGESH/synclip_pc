@@ -1,29 +1,11 @@
 import Store from 'electron-store';
+import { getMacAddress } from '../util';
 
-export const defaultCurrentDevice = {
-  id: '',
-  userId: '',
-  mac: '',
-  alias: '',
-  deviceType: 'PC',
-  fcmToken: '',
-};
-
-export const store = new Store({
+export const appStore = new Store({
   schema: {
-    currentDevice: {
-      type: 'object',
-      default: defaultCurrentDevice,
-    },
-    // Shortcuts
-    readClipboard: {
+    macAddress: {
       type: 'string',
-      // default: 'Alt+C',
-      default: 'Shift+C',
+      default: getMacAddress(),
     },
   },
 });
-
-export function setDefaultCurrentDevice() {
-  // store.set('currentDevice', defaultCurrentDevice);
-}
