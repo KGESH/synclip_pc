@@ -136,10 +136,7 @@ export const googleAuthorization = (mainWindow: BrowserWindow | null) => {
         fcmToken: 'sample_TOKEN',
       });
 
-      // Save device id to local storage
       console.log(`Registered device: `, newDevice);
-      // Todo: remove
-      // setCurrentDevice(newDevice);
     }
 
     authWindow.close();

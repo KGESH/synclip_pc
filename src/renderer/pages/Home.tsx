@@ -3,8 +3,9 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useClipboard } from '../components/hooks/useClipboard';
 import { useFetchUserWithDevices } from '../components/hooks/useFetchUserWithDevices';
 import LoadingPage from './Loading';
+import withAuth from '../components/auth/AuthWrapper';
 
-export default function Home() {
+function HomePage() {
   const navigate = useNavigate();
   const { clipboardContent, readClipboard, writeClipboard } = useClipboard();
   const { isLoading, user, devices } = useFetchUserWithDevices();
@@ -47,3 +48,5 @@ export default function Home() {
     </div>
   );
 }
+
+export default withAuth(HomePage);

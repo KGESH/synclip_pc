@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import withAuth from '../components/auth/AuthWrapper';
 
-export default function ProfilePage() {
+function ProfilePage() {
   const navigate = useNavigate();
   console.log('ProfilePage');
   console.log(`href: ${window.location.href}`);
@@ -20,3 +21,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+export default withAuth(ProfilePage);
