@@ -1,24 +1,5 @@
 import { z } from 'zod';
 
-// type ClipboardTextContent = {
-//   type: 'text';
-//   content: string;
-// };
-//
-// type ClipboardBinaryContent = {
-//   type: 'file';
-// };
-//
-// type ClipboardError = {
-//   type: 'error';
-//   message: string;
-// };
-//
-// type ClipboardContent = ClipboardTextContent &
-//   ClipboardBinaryContent &
-//   ClipboardError;
-//
-
 export const clipboardTextContentSchema = z.object({
   type: z.literal('text'),
   text: z.string(),
