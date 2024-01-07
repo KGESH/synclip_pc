@@ -28,9 +28,6 @@ async function handleReadClipboard() {
   const clipboard = await readClipboard();
   if (clipboard.type === 'text') {
     const uploadResult = await uploadFile(clipboard);
-    console.log(`==== upload result ====`);
-    console.log(uploadResult);
-
     showSystemNotification({ title: 'Copied!', message: 'Send to server!' });
     notifyToServer('copy', uploadResult);
   }
@@ -40,14 +37,12 @@ async function handleReadClipboard() {
   }
 
   if (clipboard.type === 'error') {
-    console.log(`Clipboard error:`);
-    console.log(clipboard.message);
+    console.error(clipboard.message);
   }
 }
 
 const shortcutMapper = {
   readClipboard: handleReadClipboard,
-  // sample: handleClipboardChange,
 };
 
 export type Shortcuts = keyof typeof shortcutMapper;
