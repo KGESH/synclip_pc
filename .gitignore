@@ -31,3 +31,6 @@ npm-debug.log.*
 
 # credentials
 assets/credentials
+
+# envs
+.env*

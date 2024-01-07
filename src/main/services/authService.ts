@@ -1,35 +1,21 @@
-import { google, Auth } from 'googleapis';
+import { Auth, google } from 'googleapis';
 import { BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import { getUser, signUpUser } from './userService';
 import { GOOGLE_SCOPES } from '../constants/google';
 import { navigateTo } from './navigateService';
-import { getAssetPath, getMacAddress, TOKEN_PATH } from '../util';
+import { getMacAddress, TOKEN_PATH } from '../util';
 import { registerDevice } from './deviceService';
-
-type Credentials = {
-  client_id: string;
-  client_secret: string;
-  redirect_uris: string[];
-};
+import { credentialsSchema } from '../schemas/credentialsSchema';
 
 let googleAuthClient: Auth.OAuth2Client | null = null;
 
 function loadCredentials() {
-  const CREDENTIALS_PATH = getAssetPath('credentials/credentials.json');
-  if (!fs.existsSync(CREDENTIALS_PATH)) {
-    console.error('Credentials file not found');
-    return null;
-  }
-
-  try {
-    const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf-8'));
-    console.log('Credentials loaded successfully');
-    return credentials.web as Credentials; // Assuming the structure includes a 'web' key
-  } catch (error) {
-    console.error('Error reading credentials:', error);
-    return null;
-  }
+  return credentialsSchema.parse({
+    clientId: process.env.GOOGLE_AUTH_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET,
+    redirectUri: process.env.GOOGLE_AUTH_REDIRECT_URI,
+  });
 }
 
 export function getGoogleAuthClient() {
@@ -40,9 +26,9 @@ export function getGoogleAuthClient() {
       throw new Error('Failed to load Google OAuth credentials');
 
     googleAuthClient = new google.auth.OAuth2({
-      clientId: credentials.client_id,
-      clientSecret: credentials.client_secret,
-      redirectUri: credentials.redirect_uris[0],
+      clientId: credentials.clientId,
+      clientSecret: credentials.clientSecret,
+      redirectUri: credentials.redirectUri,
     });
   }
 
