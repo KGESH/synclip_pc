@@ -1,3 +1,4 @@
+import { Notification } from 'electron';
 import {
   IClipboardFileContent,
   IClipboardTextContent,
@@ -10,6 +11,7 @@ import {
 import { IUplaodFileResponse } from '../types/googleDriveTypes';
 import { writeClipboard } from './clipboardService';
 import { getGoogleAccessToken } from './authService';
+import { showSystemNotification } from './notificationService';
 
 async function _uploadTextContent(
   args: IClipboardTextContent,
@@ -149,9 +151,9 @@ export async function downloadFileFromGoogleDrive(fileId: string) {
     throw new Error('파일 다운로드 실패');
   }
 
-  // Todo: Read file from google drive. It's text file.
   const data = await response.blob();
 
+  // Todo: remove
   console.log(`[DownloadFile] data Type: ${data.type}`);
   console.log(`[DownloadFile] data: ${data}`);
   console.log(`[DownloadFile] data size: ${data.size}`);
@@ -159,7 +161,15 @@ export async function downloadFileFromGoogleDrive(fileId: string) {
 
   if (data.type === 'text/plain') {
     writeClipboard(await data.text());
+
+    // Todo: impl
+    // showSystemNotification({
+    //   title: 'Pasted!',
+    //   message: 'Copied from other device!',
+    // });
   }
+
+  // Todo: impl binary file download
 
   return data;
 }

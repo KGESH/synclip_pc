@@ -1,9 +1,10 @@
-import { globalShortcut } from 'electron';
+import { Notification, globalShortcut } from 'electron';
 import Store from 'electron-store';
 import { readClipboard } from './clipboardService';
 import { IChangeShortcut } from '../types/shortcutTypes';
 import { uploadFile } from './googleDriveService';
 import { notifyToServer } from './socketService';
+import { showSystemNotification } from './notificationService';
 
 const shortcutStore = new Store({
   schema: {
@@ -29,6 +30,8 @@ async function handleReadClipboard() {
     const uploadResult = await uploadFile(clipboard);
     console.log(`==== upload result ====`);
     console.log(uploadResult);
+
+    showSystemNotification({ title: 'Copied!', message: 'Send to server!' });
     notifyToServer('copy', uploadResult);
   }
 
