@@ -5,7 +5,7 @@ import { IUser } from '../types/userTypes';
 export async function getUser({
   id,
   email,
-}: Partial<IUser>): Promise<IUser | null> {
+}: Partial<Pick<IUser, 'id' | 'email'>>): Promise<IUser | null> {
   if (!id && !email) throw new Error('id or email is required');
 
   const endpoint = new URL('/users', BACKEND_BASE_URL);
