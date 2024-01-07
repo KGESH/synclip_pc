@@ -126,17 +126,7 @@ export const googleAuthorization = (mainWindow: BrowserWindow | null) => {
         name: 'New user',
       });
 
-      console.log(`Created user: `, createdUser);
-
-      const newDevice = await registerDevice({
-        userId: createdUser.id,
-        deviceType: 'PC',
-        mac: getMacAddress(),
-        alias: 'My new desktop',
-        fcmToken: 'sample_TOKEN',
-      });
-
-      console.log(`Registered device: `, newDevice);
+      console.log(createdUser);
     }
 
     authWindow.close();
@@ -145,7 +135,7 @@ export const googleAuthorization = (mainWindow: BrowserWindow | null) => {
       navigateTo({
         window: mainWindow,
         id: 'main',
-        path: '/profile',
+        path: '/',
       });
     }
   });
