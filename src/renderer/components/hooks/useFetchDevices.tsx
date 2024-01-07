@@ -3,7 +3,7 @@ import { getDevices } from '../../../main/services/deviceService';
 
 export const useFetchDevices = ({ userId }: { userId?: string }) => {
   return useQuery({
-    queryKey: ['devices', userId],
+    queryKey: ['devices'],
     queryFn: () => getDevices({ userId }),
     enabled: !!userId,
   });

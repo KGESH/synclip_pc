@@ -60,24 +60,6 @@ export async function getDevice({ id, mac }: { id?: string; mac?: string }) {
   }
 }
 
-// export function getCurrentDeviceId() {
-//   const device = store.get('currentDevice');
-//
-//   const { id } = deviceSchema.parse(device);
-//
-//   if (!id) return null;
-//
-//   return id as string;
-// }
-
-export function resetCurrentDevice() {
-  // setDefaultCurrentDevice();
-}
-
-// export function setCurrentDevice(device: IDevice) {
-//   resetCurrentDevice();
-// }
-
 export async function registerDevice(device: Omit<IDevice, 'id'>) {
   const endpoint = new URL('/devices', BACKEND_BASE_URL);
 
@@ -97,7 +79,7 @@ export async function registerDevice(device: Omit<IDevice, 'id'>) {
 
     case 'error':
     default:
-      throw new Error(`Unknown Error: ${res.message}`);
+      throw new Error(`Error: ${res.message}`);
   }
 }
 
@@ -121,6 +103,6 @@ export async function updateDevice(device: IDevice) {
 
     case 'error':
     default:
-      throw new Error(`Unknown Error: ${res.message}`);
+      throw new Error(`Error: ${res.message}`);
   }
 }

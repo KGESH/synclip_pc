@@ -7,7 +7,6 @@ export const useGoogleAccount = () => {
 
   useEffect(() => {
     const handleGetGoogleAccountResponse = async (args: unknown) => {
-      console.log(`Response from google::account::get: ${args}`);
       const account = args as { email: string } | null;
       if (account) setEmail(account.email);
     };

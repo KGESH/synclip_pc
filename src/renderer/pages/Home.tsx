@@ -1,41 +1,37 @@
 import React from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { useClipboard } from '../components/hooks/useClipboard';
 import { useFetchUserWithDevices } from '../components/hooks/useFetchUserWithDevices';
 import LoadingPage from './Loading';
 import withAuth from '../components/auth/AuthWrapper';
+import { macAddress } from '../utils/mac';
 
 function HomePage() {
+  console.log(`Render home page`);
   const navigate = useNavigate();
-  const { clipboardContent, readClipboard, writeClipboard } = useClipboard();
   const { isLoading, user, devices } = useFetchUserWithDevices();
 
   if (isLoading) return <LoadingPage />;
 
-  if (devices!.length === 0) return <Navigate to="/device/register" />;
+  if (!devices || devices.length === 0) {
+    return (
+      <Navigate
+        to="/device/register"
+        state={{
+          userId: user!.id,
+        }}
+      />
+    );
+  }
+
+  const currentDevice = devices.find((device) => device.mac === macAddress);
 
   return (
     <div>
-      <h1>
-        Hello {user?.email} {user?.name}!!
-      </h1>
-      <h2>
-        Your devices:{' '}
-        {devices!.map((device) => {
-          return (
-            <div key={device.id}>
-              {device.mac} - {device.deviceType}
-            </div>
-          );
-        })}
-      </h2>
-      <p>Clipboard: {clipboardContent}</p>
-      <button type="button" onClick={readClipboard}>
-        Read clipboard
-      </button>
-      <button type="button" onClick={() => writeClipboard('hello')}>
-        Write hello to clipboard
-      </button>
+      <h1>Hello {user?.name} !</h1>
+      <h2>Current Device</h2>
+      <p>Name: {currentDevice?.alias}</p>
+      <p>MAC: {currentDevice?.mac}</p>
+
       <button
         type="button"
         onClick={() => {
@@ -44,7 +40,18 @@ function HomePage() {
       >
         Profile
       </button>
-      {/* <GoogleLoginButton /> */}
+      <button
+        type="button"
+        onClick={() => {
+          navigate('/device/register', {
+            state: {
+              userId: user!.id,
+            },
+          });
+        }}
+      >
+        Register
+      </button>
     </div>
   );
 }
