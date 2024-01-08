@@ -27,7 +27,7 @@ function HomePage() {
 
   return (
     <div>
-      <h1>Hello {user?.name} !</h1>
+      <h1>Hello {user?.nickname} !</h1>
       <h2>Current Device</h2>
       <p>Name: {currentDevice?.alias}</p>
       <p>MAC: {currentDevice?.mac}</p>

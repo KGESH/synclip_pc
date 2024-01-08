@@ -123,7 +123,7 @@ export const googleAuthorization = (mainWindow: BrowserWindow | null) => {
     if (!user) {
       const createdUser = await signUpUser({
         email,
-        name: 'New user',
+        nickname: 'New user',
       });
 
       console.log(createdUser);

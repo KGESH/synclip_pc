@@ -9,7 +9,7 @@ export async function getDevices({
 }: Partial<Pick<IUser, 'email'> & Pick<IDevice, 'userId'>>) {
   if (!userId && !email) throw new Error('userId or email is required');
 
-  const endpoint = new URL('/devices', BACKEND_BASE_URL);
+  const endpoint = new URL('/devices/all', BACKEND_BASE_URL);
   if (userId) endpoint.searchParams.append('userId', userId);
   if (email) endpoint.searchParams.append('email', email);
 
@@ -29,6 +29,7 @@ export async function getDevices({
 
     case 'error':
     default:
+      console.log(`[GetDevices] Error: ${res.message}`);
       throw new Error(`[GetCurrentDevice] Error: ${res.message}`);
   }
 }

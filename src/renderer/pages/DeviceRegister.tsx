@@ -38,7 +38,7 @@ function DeviceRegisterPage() {
       userId,
       mac: macAddress,
       alias: input.alias,
-      fcmToken: input.fcmToken,
+      fcmToken: 'SAMPLE_FCM_TOKEN',
       deviceType: 'PC',
     });
   });

@@ -16,7 +16,7 @@ function ProfilePage() {
 
       <h2>User Info</h2>
       <p>Email: {user?.email}</p>
-      <p>{user?.name}</p>
+      <p>{user?.nickname}</p>
 
       <h3>Your devices</h3>
       {devices?.map((device) => {

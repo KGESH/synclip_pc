@@ -6,7 +6,7 @@ export const deviceSchema = z.object({
   id: z.string(),
   userId: z.string(),
   mac: z.string(),
-  alias: z.string().optional(),
+  alias: z.string(),
   deviceType: deviceTypeSchema,
   fcmToken: z.string(),
 });
