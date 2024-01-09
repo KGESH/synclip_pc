@@ -173,7 +173,7 @@ export async function getDrive({
   if (!userId && !email)
     throw new Error('[GetDrive] userId or email is required');
 
-  const endpoint = new URL(`/drive`, BACKEND_BASE_URL);
+  const endpoint = new URL(`/drives`, BACKEND_BASE_URL);
   if (userId) endpoint.searchParams.append('userId', userId);
   if (email) endpoint.searchParams.append('email', email);
 
