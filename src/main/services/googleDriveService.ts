@@ -1,17 +1,65 @@
-import { Notification } from 'electron';
+import Store from 'electron-store';
 import {
   IClipboardFileContent,
   IClipboardTextContent,
 } from '../types/clipboardTypes';
 import {
+  driveLocalFolderIdsSchema,
+  driveRegisterSchema,
   fileUploadSuccessSchema,
+  registerFoldersResponseSchema,
   textUploadSuccessSchema,
   uploadFileResponseSchema,
 } from '../schemas/googleDriveSchema';
-import { IUplaodFileResponse } from '../types/googleDriveTypes';
+import {
+  IDrive,
+  IDriveRegister,
+  IDriveLocalFolderIds,
+  IUplaodFileResponse,
+} from '../types/googleDriveTypes';
 import { writeClipboard } from './clipboardService';
 import { getGoogleAccessToken } from './authService';
-import { showSystemNotification } from './notificationService';
+import { currentTime } from '../util';
+import { BACKEND_BASE_URL } from '../constants/url';
+import { IUser } from '../types/userTypes';
+import { getUser } from './userService';
+
+const defaultFolderIds: IDriveLocalFolderIds = {
+  baseFolderId: '',
+  textFolderId: '',
+  fileFolderId: '',
+};
+
+const folderIdStore = new Store({
+  schema: {
+    folderIds: {
+      type: 'object',
+      default: defaultFolderIds,
+    },
+  },
+});
+
+export function resetLocalFolderIds() {
+  folderIdStore.clear();
+}
+
+export function getLocalFolderIds() {
+  const folderIds = folderIdStore.get('folderIds');
+  return driveLocalFolderIdsSchema.parse(folderIds);
+}
+
+export function setLocalFolderIds({
+  baseFolderId,
+  textFolderId,
+  fileFolderId,
+}: IDriveLocalFolderIds) {
+  folderIdStore.set('folderIds', {
+    baseFolderId,
+    textFolderId,
+    fileFolderId,
+  });
+  console.log(`[SetLocalFolderIds] folderIds: `, getLocalFolderIds());
+}
 
 async function _uploadTextContent(
   args: IClipboardTextContent,
@@ -19,11 +67,14 @@ async function _uploadTextContent(
 ) {
   const file = new Blob([args.text], { type: 'text/plain' });
 
-  const latestFolderId = 'root';
+  const { textFolderId } = driveLocalFolderIdsSchema
+    .pick({ textFolderId: true })
+    .parse(folderIdStore.get('folderIds'));
+
   const metadata = {
-    name: 'SAMPLE_IPC_MAIN.txt', // Todo: change file name
+    name: `synclip_text_${currentTime()}.txt`, // Todo: change file name
     mimeType: 'text/plain',
-    parents: [latestFolderId], // Google Drive folder id
+    parents: [textFolderId], // Google Drive folder id
   };
 
   const form = new FormData();
@@ -43,6 +94,7 @@ async function _uploadTextContent(
   );
 
   if (!response.ok) {
+    console.log(await response.json());
     throw new Error('파일 업로드 실패');
   }
 
@@ -62,8 +114,11 @@ async function _uploadFileContents(
   { files }: IClipboardFileContent,
   accessToken: string,
 ) {
-  const latestFolderId = 'root'; // Google Drive folder id where files will be uploaded
   const uploadResponses: IUplaodFileResponse[] = [];
+
+  const { fileFolderId } = driveLocalFolderIdsSchema
+    .pick({ fileFolderId: true })
+    .parse(folderIdStore.get('folderIds'));
 
   for (const file of files) {
     // Assuming you know the mime type and name of the file, or you need to determine it
@@ -72,7 +127,7 @@ async function _uploadFileContents(
     const metadata = {
       mimeType,
       name: file.name,
-      parents: [latestFolderId],
+      parents: [fileFolderId],
     };
 
     const form = new FormData();
@@ -92,6 +147,7 @@ async function _uploadFileContents(
     );
 
     if (!response.ok) {
+      console.log(await response.json());
       throw new Error('File upload failed');
     }
 
@@ -110,14 +166,155 @@ async function _uploadFileContents(
   });
 }
 
+export async function getDrive({
+  userId,
+  email,
+}: Partial<Pick<IUser, 'email'> & Pick<IDrive, 'userId'>>) {
+  if (!userId && !email)
+    throw new Error('[GetDrive] userId or email is required');
+
+  const endpoint = new URL(`/drive`, BACKEND_BASE_URL);
+  if (userId) endpoint.searchParams.append('userId', userId);
+  if (email) endpoint.searchParams.append('email', email);
+
+  const response = await fetch(endpoint, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  const data = await response.json();
+  console.log(`[GetDriveFolders] res: `, data);
+
+  const res = registerFoldersResponseSchema.parse(data);
+
+  switch (res.status) {
+    case 'success':
+      console.log(`[GetDriveFolders] success`);
+      return res.data;
+
+    case 'not_found':
+      return null;
+
+    case 'error':
+    default:
+      console.log(`[GetDriveFolders] error`);
+      throw new Error('Unknown error');
+  }
+}
+
+export async function registerDrive(args: IDriveRegister) {
+  const endpoint = new URL('/drive', BACKEND_BASE_URL);
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  });
+
+  const data = await response.json();
+  console.log(`[RegisterFolderIds] res: `, data);
+
+  const res = registerFoldersResponseSchema.parse(data);
+
+  switch (res.status) {
+    case 'success':
+      console.log(`[RegisterFolderIds] success`);
+      return res.data;
+
+    case 'error':
+    default:
+      console.log(`[RegisterFolderIds] error`);
+      throw new Error('[RegisterFolder] Unknown error');
+  }
+}
+
+export async function createFolder({
+  type,
+  parentFolderId,
+  accessToken,
+}: {
+  type: 'base' | 'text' | 'file';
+  parentFolderId: string;
+  accessToken: string;
+}) {
+  const folderName = `synclip_${type}`;
+
+  const metadata = {
+    name: folderName,
+    mimeType: 'application/vnd.google-apps.folder',
+    parents: [parentFolderId], // Google Drive folder id
+  };
+
+  const response = await fetch(
+    'https://www.googleapis.com/drive/v3/files?supportsAllDrives=true',
+    {
+      method: 'POST',
+      headers: new Headers({
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify(metadata),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error('폴더 생성 실패');
+  }
+
+  const data = await response.json();
+  console.log(`[CreateFolder] data: ${data}`);
+
+  return data;
+}
+
+/**
+ * create synclip folders
+ * synclip_base is under the root.
+ * synclip_text and synclip_file are under the synclip_base
+ */
+export async function initGoogleDrive(userId: string) {
+  const accessToken = await getGoogleAccessToken();
+
+  if (!accessToken) throw new Error('[CreateFolder] No access token');
+
+  const { id: baseFolderId } = await createFolder({
+    type: 'base',
+    parentFolderId: 'root',
+    accessToken,
+  });
+
+  const { id: textFolderId } = await createFolder({
+    type: 'text',
+    parentFolderId: baseFolderId,
+    accessToken,
+  });
+
+  const { id: fileFolderId } = await createFolder({
+    type: 'file',
+    parentFolderId: baseFolderId,
+    accessToken,
+  });
+
+  const drive = driveRegisterSchema.parse({
+    userId,
+    baseFolderId,
+    textFolderId,
+    fileFolderId,
+  });
+
+  console.log(`[InitGoogleDrive] drive: `, drive);
+
+  setLocalFolderIds(drive);
+
+  return registerDrive(drive);
+}
+
 export async function uploadFile(
   args: IClipboardTextContent | IClipboardFileContent,
 ) {
   const accessToken = await getGoogleAccessToken();
 
   if (!accessToken) throw new Error('[UploadFile] No access token');
-
-  // const { userId } = getCurrentDevice();
 
   if (args.type === 'text') {
     const response = await _uploadTextContent(args, accessToken);
@@ -172,4 +369,33 @@ export async function downloadFileFromGoogleDrive(fileId: string) {
   // Todo: impl binary file download
 
   return data;
+}
+
+export async function syncLocalFolderIds({ email }: { email: string }) {
+  const user = await getUser({ email });
+
+  if (!user) {
+    console.log(`New account. Reset local folder ids.`);
+    resetLocalFolderIds();
+    return;
+  }
+
+  const drive = await getDrive({ userId: user.id });
+
+  if (!drive) {
+    await initGoogleDrive(user.id);
+    return;
+  }
+
+  const { baseFolderId, textFolderId, fileFolderId } = getLocalFolderIds();
+
+  // Sync local folder ids
+  if (
+    drive.baseFolderId !== baseFolderId ||
+    drive.textFolderId !== textFolderId ||
+    drive.fileFolderId !== fileFolderId
+  ) {
+    console.log(`[SyncLocalFolderIds] Sync local folder ids`);
+    setLocalFolderIds(drive);
+  }
 }

@@ -3,6 +3,7 @@ import { app } from 'electron';
 import { URL } from 'url';
 import path from 'path';
 import getMAC, { isMAC } from 'getmac';
+import dayjs from 'dayjs';
 
 export function resolveHtmlPath(htmlFileName: string) {
   if (process.env.NODE_ENV === 'development') {
@@ -40,4 +41,8 @@ export function getMacAddress() {
   if (!isMAC(macAddress)) throw new Error('Invalid MAC Address');
 
   return macAddress;
+}
+
+export function currentTime() {
+  return dayjs().format('YYYY-MM-DD:HH:mm:ss:SSS');
 }

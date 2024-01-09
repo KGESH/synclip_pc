@@ -11,8 +11,6 @@ import {
 
 export async function readClipboard(): Promise<IClipboardContent> {
   const filePaths = ClipboardEx.readFilePaths();
-  // ClipboardEx.hasImage();
-  // const filePaths: string[] = [];
 
   // Text content
   if (filePaths.length === 0) {
@@ -37,7 +35,6 @@ export async function readClipboard(): Promise<IClipboardContent> {
               path: filePath,
               buffer,
             });
-            console.log(`File read: ${file}`);
             resolve(file);
           }
         });
@@ -78,7 +75,6 @@ export async function readClipboard(): Promise<IClipboardContent> {
 // export function writeFilePaths(filePaths: string[]) {
 // ClipboardEx.writeFilePaths(filePaths);
 // }
-
 export function writeClipboard(content: string) {
   console.log(`write clipboard content: ${content}`);
 

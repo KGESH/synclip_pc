@@ -43,7 +43,10 @@ import {
   unregisterShortcuts,
 } from './services/shortcutService';
 import { textUploadSuccessSchema } from './schemas/googleDriveSchema';
-import { downloadFileFromGoogleDrive } from './services/googleDriveService';
+import {
+  downloadFileFromGoogleDrive,
+  syncLocalFolderIds,
+} from './services/googleDriveService';
 import { hideMainWindow, isAppQuit, quitApp } from './services/appService';
 
 class AppUpdater {
@@ -113,6 +116,8 @@ ipcMain.on('google::account::get', async (event, args) => {
     if (!token) return event.reply('google::account::done', null);
 
     const accountInfo = await getGoogleAccountInfo(token);
+
+    await syncLocalFolderIds(accountInfo);
 
     return event.reply('google::account::done', accountInfo);
   } catch (e) {
@@ -273,7 +278,10 @@ app.on('window-all-closed', () => {
 app
   .whenReady()
   .then(() => {
-    const socket = connectToDeviceSocketServer({ mac: getMacAddress() });
+    const socket = connectToDeviceSocketServer({
+      mac: getMacAddress(),
+      deviceType: 'PC',
+    });
     registerCustomSocketEvents(socket);
 
     // Todo: fetch from server

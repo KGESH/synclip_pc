@@ -25,10 +25,17 @@ export function setShortcut(key: string, value: string) {
 }
 
 async function handleReadClipboard() {
+  // Todo: Impl pricing plan
+  const isMaxDeviceCount = false;
+  if (isMaxDeviceCount) {
+    console.log(`[handleReadClipboard] Max device count reached.`);
+    return;
+  }
+
   const clipboard = await readClipboard();
   if (clipboard.type === 'text') {
     const uploadResult = await uploadFile(clipboard);
-    showSystemNotification({ title: 'Copied!', message: 'Send to server!' });
+    showSystemNotification({ title: 'Copied!', message: 'Sent to server!' });
     notifyToServer('copy', uploadResult);
   }
 

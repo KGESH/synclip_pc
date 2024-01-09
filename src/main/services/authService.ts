@@ -4,9 +4,15 @@ import * as fs from 'fs';
 import { getUser, signUpUser } from './userService';
 import { GOOGLE_SCOPES } from '../constants/google';
 import { navigateTo } from './navigateService';
-import { getMacAddress, TOKEN_PATH } from '../util';
-import { registerDevice } from './deviceService';
+import { TOKEN_PATH } from '../util';
 import { credentialsSchema } from '../schemas/credentialsSchema';
+import {
+  getDrive,
+  initGoogleDrive,
+  registerDrive,
+  resetLocalFolderIds,
+  setLocalFolderIds,
+} from './googleDriveService';
 
 let googleAuthClient: Auth.OAuth2Client | null = null;
 
@@ -127,6 +133,13 @@ export const googleAuthorization = (mainWindow: BrowserWindow | null) => {
       });
 
       console.log(createdUser);
+
+      const drive = await getDrive({ userId: createdUser.id });
+
+      if (!drive) {
+        const createdDrive = await initGoogleDrive(createdUser.id);
+        console.log(createdDrive);
+      }
     }
 
     authWindow.close();

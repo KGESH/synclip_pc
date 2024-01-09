@@ -73,7 +73,7 @@ function setupSocketEventListeners(io: Socket): void {
 }
 
 // Modify getSocket to use setupSocketEventListeners
-function getSocket(args: Pick<IDevice, 'mac'>): Socket {
+function getSocket(args: Pick<IDevice, 'mac' | 'deviceType'>): Socket {
   if (!socket) {
     console.log(`Creating new socket connection`);
     const currentManager = initializeManager(args);
@@ -85,7 +85,7 @@ function getSocket(args: Pick<IDevice, 'mac'>): Socket {
 }
 
 export function connectToDeviceSocketServer(
-  args: Pick<IDevice, 'mac'>,
+  args: Pick<IDevice, 'mac' | 'deviceType'>,
 ): Socket {
   if (!socket?.connected) socket = getSocket(args);
 
