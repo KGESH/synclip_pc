@@ -255,14 +255,14 @@ ipcMain.on('app::store::set', async (event, key, val) => {
   appStore.set(key, val);
 });
 
-ipcMain.on('shortcut::store::get', (event, args) => {
+ipcMain.on('shortcuts::store::get', (event, args) => {
   event.returnValue = getShortcut(args);
 });
 
-ipcMain.on('shortcut::store::set', (event, args) => {
+ipcMain.on('shortcuts::store::set', (event, args) => {
   const params = changeShortcutSchema.parse(args);
   const isChanged = changeShortcut(params);
-  event.reply('shortcut::store::set::done', isChanged);
+  event.reply('shortcuts::store::set::done', isChanged);
 });
 
 app.on('window-all-closed', () => {

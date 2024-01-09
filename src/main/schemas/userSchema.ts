@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createResponseSchema } from './responseSchema';
 
 export const userSchema = z.object({
   id: z.string(),
@@ -6,17 +7,4 @@ export const userSchema = z.object({
   nickname: z.string().optional(),
 });
 
-export const userResponseSuccessSchema = z.object({
-  status: z.literal('success'),
-  data: userSchema,
-});
-
-export const userResponseFailSchema = z.object({
-  status: z.union([z.literal('error'), z.literal('not_found')]),
-  message: z.string(),
-});
-
-export const userResponseSchema = z.union([
-  userResponseSuccessSchema,
-  userResponseFailSchema,
-]);
+export const userResponseSchema = createResponseSchema(userSchema);

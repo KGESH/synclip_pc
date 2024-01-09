@@ -6,8 +6,8 @@ import {
 import {
   driveLocalFolderIdsSchema,
   driveRegisterSchema,
+  driveResponseSchema,
   fileUploadSuccessSchema,
-  registerFoldersResponseSchema,
   textUploadSuccessSchema,
   uploadFileResponseSchema,
 } from '../schemas/googleDriveSchema';
@@ -174,7 +174,7 @@ export async function getDrive({
     throw new Error('[GetDrive] userId or email is required');
 
   const endpoint = new URL(`/drives`, BACKEND_BASE_URL);
-  if (userId) endpoint.searchParams.append('userId', userId);
+  if (userId) endpoint.searchParams.append('id', userId);
   if (email) endpoint.searchParams.append('email', email);
 
   const response = await fetch(endpoint, {
@@ -185,7 +185,7 @@ export async function getDrive({
   const data = await response.json();
   console.log(`[GetDriveFolders] res: `, data);
 
-  const res = registerFoldersResponseSchema.parse(data);
+  const res = driveResponseSchema.parse(data);
 
   switch (res.status) {
     case 'success':
@@ -203,7 +203,7 @@ export async function getDrive({
 }
 
 export async function registerDrive(args: IDriveRegister) {
-  const endpoint = new URL('/drive', BACKEND_BASE_URL);
+  const endpoint = new URL('/drives', BACKEND_BASE_URL);
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -212,9 +212,10 @@ export async function registerDrive(args: IDriveRegister) {
   });
 
   const data = await response.json();
+
   console.log(`[RegisterFolderIds] res: `, data);
 
-  const res = registerFoldersResponseSchema.parse(data);
+  const res = driveResponseSchema.parse(data);
 
   switch (res.status) {
     case 'success':

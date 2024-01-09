@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createResponseSchema } from './responseSchema';
 
 export const deviceTypeSchema = z.union([z.literal('PC'), z.literal('MOBILE')]);
 
@@ -11,17 +12,8 @@ export const deviceSchema = z.object({
   fcmToken: z.string(),
 });
 
-export const deviceResponseSuccessSchema = z.object({
-  status: z.literal('success'),
-  data: z.union([deviceSchema, deviceSchema.array()]),
-});
+export const devicesSchema = deviceSchema.array();
 
-export const deviceResponseFailSchema = z.object({
-  status: z.union([z.literal('error'), z.literal('not_found')]),
-  message: z.string(),
-});
-
-export const deviceResponseSchema = z.union([
-  deviceResponseSuccessSchema,
-  deviceResponseFailSchema,
-]);
+export const deviceResponseSchema = createResponseSchema(
+  z.union([deviceSchema, devicesSchema]),
+);

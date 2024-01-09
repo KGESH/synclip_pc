@@ -11,9 +11,9 @@ export type Channels =
   | 'write-clipboard'
   | 'app::store::get'
   | 'app::store::set'
-  | 'shortcut::store::get'
-  | 'shortcut::store::set'
-  | 'shortcut::store::set::done'
+  | 'shortcuts::store::get'
+  | 'shortcuts::store::set'
+  | 'shortcuts::store::set::done'
   | 'google::account::get'
   | 'google::account::done';
 
@@ -42,6 +42,14 @@ const electronHandler = {
     },
     set(property: string, val: any) {
       ipcRenderer.send('app::store::set', property, val);
+    },
+  },
+  shortcutsStore: {
+    get(key: string) {
+      return ipcRenderer.sendSync('shortcuts::store::get', key);
+    },
+    set(property: string, val: any) {
+      ipcRenderer.send('shortcuts::store::set', property, val);
     },
   },
 };

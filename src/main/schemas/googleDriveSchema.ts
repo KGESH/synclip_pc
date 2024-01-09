@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createResponseSchema } from './responseSchema';
 
 export const uploadFileResponseSchema = z.object({
   id: z.string(),
@@ -48,17 +49,4 @@ export const driveLocalFolderIdsSchema = driveSchema.pick({
   fileFolderId: true,
 });
 
-export const registerFoldersSuccessSchema = z.object({
-  status: z.literal('success'),
-  data: driveSchema,
-});
-
-export const registerFoldersErrorSchema = z.object({
-  status: z.union([z.literal('not_found'), z.literal('error')]),
-  message: z.string(),
-});
-
-export const registerFoldersResponseSchema = z.union([
-  registerFoldersSuccessSchema,
-  registerFoldersErrorSchema,
-]);
+export const driveResponseSchema = createResponseSchema(driveSchema);
